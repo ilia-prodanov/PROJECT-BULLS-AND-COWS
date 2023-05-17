@@ -2,22 +2,19 @@
 
 //should make something to check if all the numbers of the player are the same. 
 
-int[] possibleNumbersArray = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 List<int> possibleNumbersList = new List<int>();
-int[] trueNumbersArray = new int[] {-1, -1, -1, -1};
-int[] pcNumList = initialisePcNumber();
+int pcNum = generatePcNum();
 int bulls = 0;
 int cows = 0;
-int lastNumIndex = -1;
-int lastUnusefulNumber = -1;
 bool areWePlaying = true;
-bool isPhaseOne = true;
+List<int> scores = new List<int>();
+bool isPlayerFirst = firstTurnGenerator();
+initialiseAllPossibleNumbers(ref possibleNumbersList);
+
+Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
 Console.WriteLine("Welcome to 'Bulls and Cows'!");
 Console.Write("You can write your number here:  ");
 Console.ReadLine();
-
-bool isPlayerFirst = firstTurnGenerator();
-initialiseAllPossibleNumbers(ref possibleNumbersList);
 
 while (areWePlaying == true)
 {
@@ -56,75 +53,34 @@ while (areWePlaying == true)
     }
 }
 
-static void initialiseAllPossibleNumbers (ref List<int> possibleNumbersList)
-{  
-    for (int i = 0; i < 10000; i++)
-    {
-        possibleNumbersList.Add(i);
-    }
-}
-
-List<int> scores = new List<int>();
-static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int numberFromInput, ref int bulls, ref int cows )
+static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int previousNumArray, ref int bulls, ref int cows )
 {
     //Here I will analyse what would be the result if the correct pass was the input pass. Checking bulls and cows quantity to decide whether the number is a valid option or not.
-    //If not, the number will be removed. I have to have on mind that I am going to need a second method for the part when I have to search for the best next move. 
-
     //Converting the input number to array which will save the value and making a duplicate to work with the value freely
-    int[] inputNumToArray = Array.ConvertAll(numberFromInput.ToString().ToArray(), x => (int)x - 48);   
-    int[] copyUsedForOperations = inputNumToArray;
 
-    /*
-     int numberFromInput = 5056;
-     int[] inputNumToArray = new int[4];
-
-
-     for (int i = 3; i >= 0; i--)
-     {
-         inputNumToArray[i] = numberFromInput % 10;
-         numberFromInput = numberFromInput / 10;
-     }
-     for (int i = 0; i < inputNumToArray.Length; i++)
-     {
-         Console.WriteLine(inputNumToArray[i]);
-     }
-     */
-
-    foreach (int number in possibleNumbersList)
+    //For the next time: to check relation between: previousNumArray, lastNumberArray, tempArray and which one to send in bullsAndCowsChecker
+    int[] lastNumberArray = numToArray(previousNumArray);
+   
+    for (int k = 0; k < possibleNumbersList.Count; k++)
     {
+        int[] possibleNumberArray = numFiller(possibleNumbersList[k]);
+        int[] tempArray = copyArray(lastNumberArray);
         int _bulls = 0;
-        int _cows = 0;
-        int[] numberArray = Array.ConvertAll(number.ToString().ToArray(), x => (int)x - 48);
-        copyUsedForOperations = inputNumToArray;
-        for (int i = 0; i < 4; i++)
+        int _cows = 0;     
+        bullsAndCowsChecker(possibleNumberArray, tempArray, ref _bulls, ref _cows);
+        
+        if (_bulls != bulls || _cows != cows)
         {
-            for (int j = 0; j < 4; j++) 
-            {
-                if (numberArray[i] == copyUsedForOperations[i])
-                {
-                    _bulls++;
-                    copyUsedForOperations[i] = -1;
-                    numberArray[i] = -1;
-                    break;
-                }
-                else if (numberArray[i] == copyUsedForOperations[j])
-                {
-                    _cows++;
-                    numberArray[i] = -1;
-                    copyUsedForOperations[j] = -1;
-                    break;
-                }
-            
-            }
-        }
-        if(_bulls != bulls || _cows != cows)
-        {
-            possibleNumbersList.Remove(number);
+            possibleNumbersList[k] = -1;
         }
     }
+    possibleNumbersList.RemoveAll(item => item == -1);
 }
+
+
 static void pcTurn(int[] possibleNumbersArray, ref int lastNumIndex, ref int bulls, ref int cows, ref int[] trueNumbersArray, ref int lastUnusefulNumber)
 {
+    //I will get back to that later. Need to finish the other methods first and then use them here
     Console.WriteLine(">--------------------------<");
     Console.WriteLine("PC turn");   
     
@@ -133,49 +89,91 @@ static void pcTurn(int[] possibleNumbersArray, ref int lastNumIndex, ref int bul
     bulls = bullsAndCowsValidation();
     Console.Write("Cows:");
     cows = bullsAndCowsValidation();
+}
 
-    if(cows + bulls ==  0)
+static void playerTurn(int[] pcNumList)
+{
+    Console.WriteLine(">--------------------------<");
+    Console.WriteLine("It's your turn. Try to guess the number!");
+    int pcNum = generatePcNum();
+    Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
+    int playerInput = numberForGuessingValidation();
+    int[] temporaryList = numToArray(pcNum);
+    int[] playerInputToList = numToArray(playerInput);
+    int currentBulls = 0;
+    int currentCows = 0;
+
+    bullsAndCowsChecker(playerInputToList, temporaryList, ref currentBulls, ref currentCows);
+    if (currentBulls == 4)
     {
-        lastUnusefulNumber = possibleNumbersArray[lastNumIndex];
-    }
-    else if( cows + bulls == 1)
-    {
-        addNumbersToArray(ref trueNumbersArray, possibleNumbersArray[lastNumIndex], 1);
-    }
-    else if (cows + bulls == 2)
-    {
-        addNumbersToArray(ref trueNumbersArray, possibleNumbersArray[lastNumIndex], 2);
-    }
-    else if (cows + bulls == 3)
-    {
-        addNumbersToArray(ref trueNumbersArray, possibleNumbersArray[lastNumIndex], 3);
-    }
-    else if (cows + bulls == 4)
-    {
-        addNumbersToArray(ref trueNumbersArray, possibleNumbersArray[lastNumIndex], 4);
+        Console.WriteLine("Congratulations! You guessed the number!");
     }
     else
     {
-        Console.WriteLine("Error at pcTurn function. Please tell Ilia or else he'll get real mad");
+        Console.WriteLine($"Bulls and Cows: {currentBulls} bulls , {currentCows} cows");
     }
-    possibleNumbersArray[lastNumIndex] = -1;
 }
-
-static void addNumbersToArray(ref int[] trueNumbersArray, int number, int quantity)
+static int[] numFiller(int num)
 {
-    for (int i = 0; i < quantity; i++)
+    int[] newArray = new int[4];
+    if (num < 1000)
     {
-        if (trueNumbersArray[i] == -1)
+        int numDifference = 4 - num.ToString().Length;
+        int[] oldNumArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+        for (int i = 0; i < numDifference; i++)
         {
-            trueNumbersArray[i] = number;
+            newArray[i] = 0;
         }
-        else if (trueNumbersArray[i] != -1)
+        for (int i = numDifference; i < 4; i++)
         {
-            quantity++;
-        }       
+            newArray[i] = oldNumArray[i - numDifference];
+        }
+    }
+    else
+    {
+        newArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+    }
+    return newArray;
+}
+static int[] copyArray(int[] inputNumToArray)
+{
+    int[] copyUsedForOperations = new int[4];
+    for (int i = 0; i < inputNumToArray.Length; i++)
+    {
+        copyUsedForOperations[i] = inputNumToArray[i];
+    }
+    return copyUsedForOperations;
+}
+static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bulls, ref int _cows)
+{
+
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            if (firstArray[i] == secondArray[i])
+            {
+                _bulls++;
+                secondArray[i] = -1;
+                firstArray[i] = -1;
+                break;
+
+            }
+            else if (firstArray[j] == secondArray[i])
+            {
+                _cows++;
+                secondArray[i] = -1;
+                firstArray[j] = -1;
+            }
+        }
     }
 }
-
+static int generatePcNum()
+{
+    Random random = new Random();
+    int randomNumber = random.Next(1000, 10000);
+    return randomNumber;
+}
 static int bullsAndCowsValidation()
 {
     while (true)
@@ -200,91 +198,7 @@ static int bullsAndCowsValidation()
         }
     }
 }
-static int[] initialisePcNumber()
-{
-    int pcNumber = pcNumberGenerator();
-    //int pcNumber = 8124;
-    //int pcNumber = 5811;
-    int[] pcNumList = new int[5];
-    pcNumList[0] = -1;
-    Console.WriteLine($"Random 4-digit number of the PC: {pcNumber} ");
-
-    for (int i = 4; i >= 1; i--)
-    {
-        pcNumList[i] = pcNumber % 10;
-        // Console.WriteLine($"PcNumber: {pcNumber % 10}");
-        pcNumber /= 10;
-        // Console.WriteLine($"Pcnumlist {i}: {pcNumList[i]}");
-
-    }
-    return pcNumList;
-}
-static void playerTurn(int[] pcNumList)
-{
-    //Player turn:
-    int playerInput;
-    //pcNumList is going to have 5 elements so that I won't need to think about indexation values because now the first number is on first index, the second on second index and so on.
-    int[] playerInputList = new int[5];
-    playerInputList[0] = -1;
-    int currentBulls = 0;
-    int currentCows = 0;
-    
-    Console.WriteLine(">--------------------------<");
-    Console.WriteLine("It's your turn. Try to guess the number!");
-    playerInput = inputAndValidation();
-
-    int[] temporaryList = new int[5];
-    for (int i = 0; i < 5; i++)
-    {
-        temporaryList[i] = pcNumList[i];
-    }
-
-    for (int i = 4; i >= 1; i--)
-    {
-        playerInputList[i] = playerInput % 10;
-        // Console.WriteLine($"PcNumber: {pcNumber % 10}");
-        playerInput /= 10;
-        // Console.WriteLine($"Pcnumlist {i}: {pcNumList[i]}");
-
-    }
-
-    for (int i = 1; i < 5; i++)
-    {
-        for (int j = 1; j < 5; j++)
-        {
-            if (playerInputList[i] == temporaryList[i])
-            {
-                currentBulls++;
-                temporaryList[i] = -1;
-                playerInputList[i] = -2;
-                break;
-
-            }
-            else if (playerInputList[j] == temporaryList[i])
-            {
-                currentCows++;
-                temporaryList[i] = -1;
-                playerInputList[j] = -2;
-            }
-        }
-    }
-
-    if (currentBulls == 4)
-    {
-        Console.WriteLine("Congratulations! You guessed the number!");
-    }
-    else
-    {
-        Console.WriteLine($"Bulls and Cows: {currentBulls} bulls , {currentCows} cows");
-    }
-}
-static int pcNumberGenerator()
-{
-    Random random = new Random();
-    int randomNumber = random.Next(1000, 10000);
-    return randomNumber;
-}
-static int inputAndValidation()
+static int numberForGuessingValidation()
 {    
     while (true)
     {
@@ -322,5 +236,15 @@ static bool firstTurnGenerator()
         return true;
     }
 }
-
-//addNumbersToArray(ref trueNumbersArray, possibleNumbersArray[lastNumIndex], 1);
+static int[] numToArray(int num)
+{
+    int[] temporaryArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+    return temporaryArray;
+}
+static void initialiseAllPossibleNumbers(ref List<int> possibleNumbersList)
+{
+    for (int i = 0; i < 10000; i++)
+    {
+        possibleNumbersList.Add(i);
+    }
+}

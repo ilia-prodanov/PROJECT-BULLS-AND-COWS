@@ -1,4 +1,5 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using System.Numerics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Test1
 {
@@ -6,80 +7,88 @@ namespace Test1
     {
         static void Main(string[] args)
         {
-            List<int> possibleNumbersList = new List<int>();
-            int numberFromInput = 1122;
-            int bulls = 1;
-            int cows = 1;
-            for (int i = 1000; i < 10000; i++)
+            Console.WriteLine(">--------------------------<");
+            Console.WriteLine("It's your turn. Try to guess the number!");
+            int pcNum = generatePcNum();
+            Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
+            int playerInput = numberForGuessingValidation();
+            int[] temporaryList = numToArray(pcNum);
+            int[] playerInputToList = numToArray(playerInput);
+            int currentBulls = 0;
+            int currentCows = 0;
+ 
+            bullsAndCowsChecker(playerInputToList, temporaryList, ref currentBulls, ref currentCows);
+
+            if (currentBulls == 4)
             {
-                possibleNumbersList.Add(i);
+                Console.WriteLine("Congratulations! You guessed the number!");
+            }
+            else
+            {
+                Console.WriteLine($"{currentBulls} bulls , {currentCows} cows");
             }
 
-            int[] inputNumToArray = Array.ConvertAll(numberFromInput.ToString().ToArray(), x => (int)x - 48);           
-            
-            static int[] arrayCopyFunc(int[] inputNumToArray)
+            static void bullsAndCowsChecker(int[] playerInputToList, int[] temporaryList, ref int currentBulls, ref int currentCows)
             {
-                int[] copyUsedForOperations = new int[4];
-                for (int i = 0; i < inputNumToArray.Length; i++)
-                {
-                    copyUsedForOperations[i] = inputNumToArray[i];
-                }
-                return copyUsedForOperations;
-            }
-            
-            for(int k = 0 ; k < possibleNumbersList.Count; k++)
-            {
-                int[] copyUsedForOperations = arrayCopyFunc(inputNumToArray);               
 
-                int _bulls = 0;
-                int _cows = 0;
-                int[] numberArray = Array.ConvertAll(possibleNumbersList[k].ToString().ToArray(), x => (int)x - 48);
-                               
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 0; j < 4; j++)
                     {
-                        
-                        if (numberArray[i] == copyUsedForOperations[i])
+                        if (playerInputToList[i] == temporaryList[i])
                         {
-                            Console.WriteLine("bull");                           
-                            _bulls++;
-                            numberArray[i] = -1;
-                            copyUsedForOperations[i] = -7;                           
+                            currentBulls++;
+                            temporaryList[i] = -1;
+                            playerInputToList[i] = -1;
                             break;
-                            
 
                         }
-                        else if (numberArray[i] == copyUsedForOperations[j])
+                        else if (playerInputToList[j] == temporaryList[i])
                         {
-                            
-                            Console.WriteLine("cow");                         
-                            _cows++;
-                            numberArray[i] = -1;
-                            copyUsedForOperations[j] = -7;                          
-                            break;
+                            currentCows++;
+                            temporaryList[i] = -1;
+                            playerInputToList[j] = -1;
                         }
-
                     }
                 }
-                if (_bulls != bulls || _cows != cows)
-                {                   
-                    Console.WriteLine("Out");
-                    possibleNumbersList[k] = -1;
-                }
-                else
-                {
-                    Console.WriteLine("YES");
-                }
             }
-            
-            possibleNumbersList.RemoveAll(item => item == -1);
-            foreach (int number in possibleNumbersList)
+            static int[] numToArray(int num)
             {
-                Console.WriteLine(number);
+                int[] temporaryArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+                return temporaryArray;
             }
-            Console.WriteLine(possibleNumbersList.Count);
 
+            static int numberForGuessingValidation()
+            {
+                while (true)
+                {
+                    int input;
+                    bool isDigit;
+                    isDigit = int.TryParse(Console.ReadLine(), out input);
+                    if (isDigit)
+                    {
+                        if ((input < 1000 || input > 9999) && input != 0000)
+                        {
+                            Console.WriteLine("Wrong input! Try again.");
+                        }
+                        else
+                        {
+                            return input;
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Wrong input! Try again.");
+                    }
+                }
+
+            }
+            static int generatePcNum()
+            {
+                Random random = new Random();
+                int randomNumber = random.Next(0, 10000);
+                return randomNumber;
+            }           
         }
     }
 }
