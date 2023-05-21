@@ -7,57 +7,132 @@ namespace Test1
     {
         static void Main(string[] args)
         {
+            List<int> possibleNumbersList = new List<int>();
+            initialiseAllPossibleNumbers(ref possibleNumbersList);
             Console.WriteLine(">--------------------------<");
             Console.WriteLine("It's your turn. Try to guess the number!");
             int pcNum = generatePcNum();
             Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
-            int playerInput = numberForGuessingValidation();
-            int[] temporaryList = numToArray(pcNum);
-            int[] playerInputToList = numToArray(playerInput);
-            int currentBulls = 0;
-            int currentCows = 0;
- 
-            bullsAndCowsChecker(playerInputToList, temporaryList, ref currentBulls, ref currentCows);
-
-            if (currentBulls == 4)
+            int _bulls = 0;
+            int _cows = 0;
+            List<int> minimaxScore = new List<int>();
+            for (int i = 0; i < possibleNumbersList.Count; i++)
             {
-                Console.WriteLine("Congratulations! You guessed the number!");
+                List<string> bullCowResultList = new List<string>();
+                for (int j = 0; j < possibleNumbersList.Count; j++)
+                {
+                    if (i == j)
+                    {
+                        continue;
+                    }
+
+                    int[] firstNumArray = numFiller(possibleNumbersList[i]);
+                    int[] secondNumArray = numFiller(possibleNumbersList[j]);
+                    bullsAndCowsChecker(firstNumArray, secondNumArray, ref _bulls, ref _cows);
+                    //Here I have the bulls & cows result from comparison of two numbers. Now I have to save it in a list
+                    bullCowResultList.Add($"{_bulls}bull(s) {_cows}cow(s)");
+                    _bulls = 0;
+                    _cows = 0;
+                }
+                //Now I have compared one number to all other numbers. Here I find the minimaxScore and Add it to another list before the loop redefines bullCowResultList
+                foreach (string result in bullCowResultList)
+                {
+                    Console.WriteLine(result);
+                }
+                bullCowResultList.Sort();
+                Console.WriteLine(bullCowResultList.Count);
+                //foreach (string result in bullCowResultList)
+                //{
+                //    Console.WriteLine(result);
+                //}
+                int counter = 1;
+                int max = 0;
+                
+                for (int p = 1; p <= bullCowResultList.Count; p++)
+                {
+                    if (bullCowResultList[p] == bullCowResultList[p - 1])
+                    {
+                        counter++;
+                    }
+                    else
+                    {
+                        if (max < counter)
+                        {
+                            max = counter;
+                        }
+                        counter = 1;
+                    }
+                }
+                int currentNumScore = bullCowResultList.Count - max;
+                minimaxScore.Add(currentNumScore);
             }
-            else
+            //#outside of the Big Lup
+            //Now I have all the minimax scores and they are in minimaxScore. Now to find the biggest and the corresponding number
+            int nextNumScore = minimaxScore.Max();
+            int nextNumIndex = minimaxScore.IndexOf(nextNumScore);
+            int nextNum = possibleNumbersList[nextNumIndex];
+
+
+            static void initialiseAllPossibleNumbers(ref List<int> possibleNumbersList)
             {
-                Console.WriteLine($"{currentBulls} bulls , {currentCows} cows");
+                for (int i = 0; i < 10000; i++)
+                {
+                    possibleNumbersList.Add(i);
+                }
             }
-
-            static void bullsAndCowsChecker(int[] playerInputToList, int[] temporaryList, ref int currentBulls, ref int currentCows)
+            static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bulls, ref int _cows)
             {
-
+                //Comparing two arrays and counting bulls & cows.
                 for (int i = 0; i < 4; i++)
                 {
                     for (int j = 0; j < 4; j++)
                     {
-                        if (playerInputToList[i] == temporaryList[i])
+                        if (firstArray[i] == secondArray[i])
                         {
-                            currentBulls++;
-                            temporaryList[i] = -1;
-                            playerInputToList[i] = -1;
+                            _bulls++;
+                            firstArray[i] = -1;
+                            secondArray[i] = -1;
                             break;
 
                         }
-                        else if (playerInputToList[j] == temporaryList[i])
+                        else if (firstArray[i] == secondArray[j])
                         {
-                            currentCows++;
-                            temporaryList[i] = -1;
-                            playerInputToList[j] = -1;
+                            _cows++;
+                            firstArray[i] = -1;
+                            secondArray[j] = -1;
+                            break;
                         }
                     }
                 }
+            }
+
+            static int[] numFiller(int num)
+            {
+                int[] newArray = new int[4];
+                if (num < 1000)
+                {
+                    int numDifference = 4 - num.ToString().Length;
+                    int[] oldNumArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+                    for (int i = 0; i < numDifference; i++)
+                    {
+                        newArray[i] = 0;
+                    }
+                    for (int i = numDifference; i < 4; i++)
+                    {
+                        newArray[i] = oldNumArray[i - numDifference];
+                    }
+                }
+                else
+                {
+                    newArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
+                }
+                return newArray;
             }
             static int[] numToArray(int num)
             {
                 int[] temporaryArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
                 return temporaryArray;
             }
-
             static int numberForGuessingValidation()
             {
                 while (true)
@@ -88,7 +163,8 @@ namespace Test1
                 Random random = new Random();
                 int randomNumber = random.Next(0, 10000);
                 return randomNumber;
-            }           
+            }     
+            
         }
     }
 }
