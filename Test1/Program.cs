@@ -38,21 +38,9 @@ namespace Test1
                     _bulls = 0;
                     _cows = 0;
                 }
-                //Now I have compared one number to all other numbers. Here I find the minimaxScore and Add it to another list before the loop redefines bullCowResultList
-                //foreach (string result in bullCowResultList)
-                //{
-                //    Console.WriteLine(result);
-                //}
+                //Now I have compared one number to all other numbers. Here I find the minimaxScore and Add it to another list before the loop redefines bullCowResultList               
                 bullCowResultList.Sort();
-               
-                
-                Console.WriteLine(bullCowResultList.Count);
-                
-                
-                //foreach (string result in bullCowResultList)
-                //{
-                //    Console.WriteLine(result);
-                //}
+    
                 int counter = 1;
                 int max = 0;
                 
@@ -79,15 +67,6 @@ namespace Test1
             int nextNumScore = minimaxScore.Max();
             int nextNumIndex = minimaxScore.IndexOf(nextNumScore);
             int nextNum = possibleNumbersList[nextNumIndex];    
-            Console.WriteLine($"minimaxScore.Count = {minimaxScore.Count}");
-            Console.WriteLine($"minimaxScore.Count = {minimaxScore.Count}");
-            Console.WriteLine($"minimaxScore.Count = {minimaxScore.Count}");
-            TextWriter infoText = new StreamWriter("C:\\Users\\Ilia\\Documents\\infoText.txt");
-            foreach(int score in minimaxScore)
-            {
-                infoText.WriteLine(minimaxScore);
-            }           
-            infoText.Close();
         }
 
         static void initialiseAllPossibleNumbers(ref List<int> possibleNumbersList)
