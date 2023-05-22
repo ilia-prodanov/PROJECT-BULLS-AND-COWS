@@ -4,12 +4,14 @@
 
 List<int> possibleNumbersList = new List<int>();
 int pcNum = generatePcNum();
-int bulls = 0;
-int cows = 0;
+int bulls = -1;
+int cows = -1;
 bool areWePlaying = true;
-List<int> scores = new List<int>();
 bool isPlayerFirst = firstTurnGenerator();
 initialiseAllPossibleNumbers(ref possibleNumbersList);
+int nextNum = 1122;
+int lastNum = -1;
+
 
 Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
 Console.WriteLine("Welcome to 'Bulls and Cows'!");
@@ -30,17 +32,48 @@ while (areWePlaying == true)
     }
 }
 */
-static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int lastNum, ref int bulls, ref int cows )
+
+
+static void pcTurn(ref List<int> possibleNumbersList, int previousNum, int lastnum, ref int bulls, ref int cows)
+{
+    //This method contains all other smaller methods. Here the PC tries to guess the number of the player using the minimax method, also removes unmatching numbers and saves the
+    //result (bulls and cows) that the player will enter.
+    Console.WriteLine(">--------------------------<");
+    Console.WriteLine("PC turn");
+    int nextNum;
+    
+    if(bulls == -1 || cows == -1)
+    {
+        nextNum = 1122;
+    }
+    else
+    {
+        //to be continued here:
+        removeUnmatchingNumbers(ref possibleNumbersList, lastNum, ref bulls, ref cows);
+        nextNum = scoreChecker();
+    }
+
+
+
+    //The PC has asked about a number and now the player enters the answer
+    Console.WriteLine("Please, enter bulls and cows:");
+    Console.Write("Bulls:");
+    bulls = bullsAndCowsValidation();
+    Console.Write("Cows:");
+    cows = bullsAndCowsValidation();
+}
+
+static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int lastNum, ref int bulls, ref int cows)
 {
     //Here I will analyse what would be the result if the correct pass was the input pass. Checking bulls and cows quantity to decide whether the number is a valid option or not.
     //Converting the input number to array which will save the value and making a duplicate to work with the value freely
 
     //For the next time: to check relation between: previousNumArray, lastNumberArray, tempArray and which one to send in bullsAndCowsChecker
-    
+
     //1.Converting the last num that the PC asked into array.
     //2.I need lastNumberArray to be declared this way because in the loop I want to work with a copy of it (a.k.a "tempArray") in order to make comparisons multiple times
     int[] lastNumberArray = numToArray(lastNum);
-   
+
     for (int k = 0; k < possibleNumbersList.Count; k++)
     {
         //possibleNumberArray makes and array from the number that is pushed and it makes sure that the array is going to contain 4 digits (in case possibleNumbersList[k] < 1000)
@@ -48,9 +81,9 @@ static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int lastN
         //defining and redefinign tempArray again in order to make next comparison with each loop iteration.
         int[] tempArray = copyArray(lastNumberArray);
         int _bulls = 0;
-        int _cows = 0;     
+        int _cows = 0;
         bullsAndCowsChecker(possibleNumberArray, tempArray, ref _bulls, ref _cows);
-        
+
         if (_bulls != bulls || _cows != cows)
         {
             possibleNumbersList[k] = -1;
@@ -58,8 +91,7 @@ static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int lastN
     }
     possibleNumbersList.RemoveAll(item => item == -1);
 }
-
-static void scoreChecker (List<int> possibleNumbersList)
+static int scoreChecker(List<int> possibleNumbersList)
 {
     //This method will calculate the minimax scores of the remaining possible numbers and pick the one with the biggest score
     //How does it work:
@@ -76,7 +108,7 @@ static void scoreChecker (List<int> possibleNumbersList)
         List<string> bullCowResultList = new List<string>();
         for (int j = 0; j < possibleNumbersList.Count; j++)
         {
-            if(i == j)
+            if (i == j)
             {
                 continue;
             }
@@ -85,7 +117,10 @@ static void scoreChecker (List<int> possibleNumbersList)
             int[] secondNumArray = numToArray(possibleNumbersList[j]);
             bullsAndCowsChecker(firstNumArray, secondNumArray, ref _bulls, ref _cows);
             //Here I have the bulls & cows result from comparison of two numbers. Now I have to save it in a list
-            bullCowResultList.Add($"{_bulls}bull(s) {_cows}cow(s)");
+            if (_bulls != 0 && _cows != 0)
+            {
+                bullCowResultList.Add($"{_bulls}bull(s) {_cows}cow(s)");
+            }
             _bulls = 0;
             _cows = 0;
         }
@@ -93,15 +128,15 @@ static void scoreChecker (List<int> possibleNumbersList)
         bullCowResultList.Sort();
         int counter = 1;
         int max = 0;
-        for (int p = 1; p <= bullCowResultList.Count; p++)
+        for (int p = 1; p < bullCowResultList.Count; p++)
         {
-            if (bullCowResultList[p] == bullCowResultList[p-1])
+            if (bullCowResultList[p] == bullCowResultList[p - 1])
             {
                 counter++;
             }
             else
             {
-                if(max < counter)
+                if (max < counter)
                 {
                     max = counter;
                 }
@@ -116,21 +151,8 @@ static void scoreChecker (List<int> possibleNumbersList)
     int nextNumScore = minimaxScore.Max();
     int nextNumIndex = minimaxScore.IndexOf(nextNumScore);
     int nextNum = possibleNumbersList[nextNumIndex];
+    return nextNum;
 }
-
-static void pcTurn(int[] possibleNumbersArray, ref int lastNumIndex, ref int bulls, ref int cows, ref int[] trueNumbersArray, ref int lastUnusefulNumber)
-{
-    //I will get back to that later. Need to finish the other methods first and then use them here
-    Console.WriteLine(">--------------------------<");
-    Console.WriteLine("PC turn");   
-    
-    Console.WriteLine("Please, enter bulls and cows:");
-    Console.Write("Bulls:");
-    bulls = bullsAndCowsValidation();
-    Console.Write("Cows:");
-    cows = bullsAndCowsValidation();
-}
-
 static void playerTurn(int pcNum)
 {
     Console.WriteLine(">--------------------------<");
