@@ -2,7 +2,11 @@
 
 //should make something to check if all the numbers of the player are the same. 
 
+using System;
+using System.Diagnostics.CodeAnalysis;
+
 List<int> possibleNumbersList = new List<int>();
+List<int> possibleDigitsList = new List<int>();
 int pcNum = generatePcNum();
 int bulls = -1;
 int cows = -1;
@@ -10,6 +14,7 @@ bool areWePlaying = true;
 bool isPlayerFirst = firstTurnGenerator();
 initialiseAllPossibleNumbers(ref possibleNumbersList);
 int lastGuess = -1;
+int index = -1;
 
 
 Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
@@ -49,8 +54,8 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
     Console.WriteLine(">--------------------------<");
     Console.WriteLine("PC turn");
     int nextNum;
-    
-    if(bulls == -1 || cows == -1)
+
+    if (bulls == -1 || cows == -1)
     {
         nextNum = 1122;
     }
@@ -61,7 +66,19 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
         //I decided to pick a random number from the numbers left and see what results the algorhytm will have. For now I am going to postpone the "score checking" functionality in order first to complete
         //the game entirely
         //nextNum = getNextNumber(possibleNumbersList);
-        nextNum = scoreChecker(possibleNumbersList, bulls, cows);
+        //In this edition I make a score checker to make the guessing faster and more-accurate and save turns
+        if (bulls != 3)
+        {
+            nextNum = scoreChecker(possibleNumbersList, bulls, cows);
+        }
+        else
+        {
+            //I found I need to optimise the algorhytm for the cases with 3 bulls because the program just goes asking every one from the possible answers without further selection. Example (1312, 1412, 1512...
+            //it will ask every number insted of sorting out faster the numbers that are not the right answer and that is why there is the following method (at least for now): 
+            
+            possibleDigitsList = initialisePossibleDigitList(possibleNumbersList);
+            nextNum = threeBullsOptimisedAlgorhytm(possibleNumbersList);
+        }
     }
 
     lastGuess = nextNum;
@@ -82,6 +99,67 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
     }
 }
 
+List<int> initialisePossibleDigitList (List<int> possibleNumbersList)
+{
+    List<int> possibleDigitsList = new List<int>();
+    //now to find the index of the digit that is different in every number in possibleNumbersList
+    index = findIndexOfDifferentDigit(possibleNumbersList);
+
+    //Extracting all possible digits in separate list
+    for (int i = 0; i < possibleNumbersList.Count; i++)
+    {
+        char temp = possibleNumbersList[i].ToString()[index];
+        int digit = Convert.ToInt32(temp);
+        possibleDigitsList.Add(digit);
+    }
+    return possibleDigitsList;
+}
+
+int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possibleDigitsList, int nextNum)
+{
+    if (possibleNumbersList.Count == 1) 
+        return possibleNumbersList[0];
+
+    if (bulls != 0)
+    {
+        //this means that the missing digit came on the right place
+        for (int i = 0; i < possibleNumbersList.Count; i++)
+        {
+            if (possibleNumbersList[i].ToString()[index] == lastGuess.ToString()[index])
+            {
+                return possibleNumbersList[i];
+            }
+        }
+    }
+    
+    else if (cows != 0)
+    {   //to be continued
+        possibleDigitsList.RemoveAt(index);
+        if( )
+    }
+
+    //The strategy for now is to build a 4-digit number with digits from the list
+    int[] nextNumArray = new int[4];
+    for (int i = 0; i < possibleDigitsList.Count; i++)
+    {
+        nextNumArray[i] = possibleDigitsList[i];
+    }
+    nextNumArray = numToArray(Convert.ToInt32(nextNumArray));
+    return Convert.ToInt32(nextNumArray);
+}
+
+static int findIndexOfDifferentDigit(List<int> possibleNumbersList)
+{
+    string num1 = possibleNumbersList[0].ToString();
+    string num2 = possibleNumbersList[1].ToString();
+    int index = -1;
+    for (int i = 0;i < 4; i++)
+    {
+        if (num1[i] != num2[i]) 
+            index = i;
+    }
+    return index;
+}
 static int getNextNumber(List<int> possibleNumbersList)
 {
     Random random = new Random();
@@ -131,13 +209,9 @@ static int scoreChecker(List<int> possibleNumbersList, int bulls, int cows)
     int _cows = 0;
     List<int> minimaxScoreList = new List<int>();
 
-    //List<int> fullList = new List<int>();
-    //initialiseAllPossibleNumbers(ref fullList);
-
     for (int i = 0; i < possibleNumbersList.Count; i++)
     {
         int currentMiniMaxScore = 0;
-        //List<string> bullCowResultList = new List<string>();
         for (int j = 0; j < possibleNumbersList.Count; j++)
         {
             if (i == j)
@@ -151,7 +225,6 @@ static int scoreChecker(List<int> possibleNumbersList, int bulls, int cows)
             //Here I have the bulls & cows result from comparison of two numbers. Now I have to save it in a list
             if (_bulls != bulls || _cows != cows)
             {
-                //bullCowResultList.Add($"{_bulls}bull(s) {_cows}cow(s)");
                 currentMiniMaxScore++;
             }
             _bulls = 0;
@@ -252,22 +325,22 @@ static int[] copyArray(int[] inputNumToArray)
 static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bulls, ref int _cows)
 {
     //Comparing two arrays and counting bulls & cows.
-    for (int i = 0; i < 4; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            //firstArray[i] >=0
-            // i-indexer is checking for bulls
-            if (firstArray[i] == secondArray[i])
-            {
-                _bulls++;
-                firstArray[i] = -1;
-                secondArray[i] = -1;               
-                break;
 
-            }
-            //j-indexer is checking for cows
-            else if (firstArray[i] == secondArray[j])
+    for (int i = 0; i < 4 ; i++)
+    {
+        if (firstArray[i] == secondArray[i])
+        {
+            _bulls++;
+            firstArray[i] = -1;
+            secondArray[i] = -1;
+        }
+    }
+
+    for (int i = 0; i < 4; i++)
+    {      
+        for (int j = 0; j < 4; j++)
+        { 
+            if (firstArray[i] == secondArray[j] && firstArray[i] != -1 && secondArray[j] != -1)
             {
                 _cows++;
                 firstArray[i] = -1;
