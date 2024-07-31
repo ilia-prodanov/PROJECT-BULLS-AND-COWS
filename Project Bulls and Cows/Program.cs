@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 
 List<int> possibleNumbersList = new List<int>();
 List<int> possibleDigitsList = new List<int>();
@@ -15,6 +16,7 @@ bool isPlayerFirst = firstTurnGenerator();
 initialiseAllPossibleNumbers(ref possibleNumbersList);
 int lastGuess = -1;
 int index = -1;
+bool isFinalPhase = false;
 
 
 Console.WriteLine($"Random 4-digit number of the PC: {pcNum} ");
@@ -53,32 +55,34 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
     //result (bulls and cows) that the player will enter.
     Console.WriteLine(">--------------------------<");
     Console.WriteLine("PC turn");
-    int nextNum;
+    int nextNum = -1;
 
     if (bulls == -1 || cows == -1)
     {
         nextNum = 1122;
     }
-    else
+    
+
+    if (isFinalPhase == true)
+    {
+        //I found I need to optimise the algorhytm for the cases with 3 bulls because the program just goes asking every one from the possible answers without further selection. Example (1312, 1412, 1512...
+        //it will ask every number insted of sorting out faster the numbers that are not the right answer and that is why there is the following method (at least for now): 
+        if (possibleDigitsList.Count == 0)
+        {
+            possibleDigitsList = initialisePossibleDigitList(possibleNumbersList);
+        }
+        nextNum = threeBullsOptimisedAlgorhytm(possibleNumbersList, possibleDigitsList, lastGuess);
+    }
+    else if (isFinalPhase == false && nextNum != 1122)
     {
         removeUnmatchingNumbers(ref possibleNumbersList, lastGuess, ref bulls, ref cows);
 
         //I decided to pick a random number from the numbers left and see what results the algorhytm will have. For now I am going to postpone the "score checking" functionality in order first to complete
         //the game entirely
         //nextNum = getNextNumber(possibleNumbersList);
-        //In this edition I make a score checker to make the guessing faster and more-accurate and save turns
-        if (bulls != 3)
-        {
+        //In this edition I make a score checker to make the guessing faster and more-accurate and save turns     
             nextNum = scoreChecker(possibleNumbersList, bulls, cows);
-        }
-        else
-        {
-            //I found I need to optimise the algorhytm for the cases with 3 bulls because the program just goes asking every one from the possible answers without further selection. Example (1312, 1412, 1512...
-            //it will ask every number insted of sorting out faster the numbers that are not the right answer and that is why there is the following method (at least for now): 
-            
-            possibleDigitsList = initialisePossibleDigitList(possibleNumbersList);
-            nextNum = threeBullsOptimisedAlgorhytm(possibleNumbersList);
-        }
+
     }
 
     lastGuess = nextNum;
@@ -88,7 +92,13 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
     //The PC has asked about a number and now the player enters the answer
     Console.WriteLine("Please, enter bulls and cows:");
     Console.Write("Bulls:");
-    bulls = bullsAndCowsValidation();  
+    bulls = bullsAndCowsValidation();
+    
+    if (bulls == 3)
+    {
+        isFinalPhase = true;
+    }
+
     Console.Write("Cows:");
     cows = bullsAndCowsValidation();
 
@@ -108,50 +118,155 @@ List<int> initialisePossibleDigitList (List<int> possibleNumbersList)
     //Extracting all possible digits in separate list
     for (int i = 0; i < possibleNumbersList.Count; i++)
     {
-        char temp = possibleNumbersList[i].ToString()[index];
-        int digit = Convert.ToInt32(temp);
+        int[] temp = numToArray(possibleNumbersList[i]);
+        int digit = temp[index];
+        //char temp = possibleNumbersList[i].ToString()[index];
+        //int digit = Convert.ToInt32(temp);
         possibleDigitsList.Add(digit);
     }
     return possibleDigitsList;
 }
 
-int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possibleDigitsList, int nextNum)
+int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possibleDigitsList, int lastGuess)
 {
+    //This part is for when we have already usped the algorhytm and now we have result
     if (possibleNumbersList.Count == 1) 
         return possibleNumbersList[0];
 
-    if (bulls != 0)
+    else if (bulls == 1)
     {
         //this means that the missing digit came on the right place
         for (int i = 0; i < possibleNumbersList.Count; i++)
         {
-            if (possibleNumbersList[i].ToString()[index] == lastGuess.ToString()[index])
+            int[] possibleNum = numToArray(possibleNumbersList[i]);
+            int[] currentNum = numToArray(lastGuess);
+            if (currentNum.ToString()[index] == possibleNum.ToString()[index])
             {
                 return possibleNumbersList[i];
             }
         }
     }
-    
-    else if (cows != 0)
-    {   //to be continued
-        possibleDigitsList.RemoveAt(index);
-        if( )
+
+    else if (cows == 1)
+    {   //we found the last digit among the last asked num so I need to make a new possibleDigitsList only with the current digits
+        possibleDigitsList.Clear();
+        int[] nextNumToArray = numToArray(lastGuess);
+        //The below code is for these cases: . . 7 .
+        //And the number that the PC build:  8 7 8 7
+        //Then the pc will remove the second 8 byt not the first one and thus making one more guess (or an infinite guess loop) instead of removing the digit 8 as a whole and building the guess that is winning
+        int digitOnTheIndex = nextNumToArray[index];
+        for (int i = 0; i < 4; i++)
+        {
+            if (nextNumToArray[i] == digitOnTheIndex)
+            {
+                //if i == index and we have a cow that means that the number on the position <index> is not the number that we need. That's for sure.
+                continue;
+            }
+            else
+            {
+                //with the below 'if' I want to sort out every repeated number so that in the possibleDigitsList digits are present only once.
+                if (possibleDigitsList.Contains(nextNumToArray[i]))
+                {
+                    continue;
+                }
+                else possibleDigitsList.Add(nextNumToArray[i]);           
+            }
+        }
     }
 
-    //The strategy for now is to build a 4-digit number with digits from the list
-    int[] nextNumArray = new int[4];
-    for (int i = 0; i < possibleDigitsList.Count; i++)
+    else if (bulls == 0 && cows == 0)
     {
-        nextNumArray[i] = possibleDigitsList[i];
+        int[] nextNumToArray = new int[4];
+        for (int i = 3; i >= 0; i--)
+        {
+            nextNumToArray[i] = lastGuess % 10;
+            lastGuess = lastGuess / 10;
+        }
+
+        for (int i = 0;i < 4; i++)
+        {
+            if (possibleDigitsList.Contains(nextNumToArray[i]))
+            {
+                possibleDigitsList.Remove(nextNumToArray[i]);
+            }
+        }
     }
-    nextNumArray = numToArray(Convert.ToInt32(nextNumArray));
-    return Convert.ToInt32(nextNumArray);
+    
+    //This is the part when the algorhytm decides how to build the next number
+    int digitsCount = 0;
+
+    if(possibleDigitsList.Count > 4)
+    {
+        //we take the first 4 digits
+        digitsCount = 4;
+
+    }
+    else if (possibleDigitsList.Count == 4)
+    {
+        //we take the first 3 digits
+        digitsCount = 3;
+    }
+    else if (possibleDigitsList.Count == 3)
+    {
+        //we take the first 2 digits
+        digitsCount = 2;
+    }
+    else if (possibleDigitsList.Count == 2)
+    {
+        //we take only the first digit
+        digitsCount = 1;
+    }
+    else if(possibleDigitsList.Count == 1)
+    {
+        return findNumber(possibleNumbersList, possibleDigitsList[0]); 
+    }
+
+    int[] nextNumArray = arrayBuilder(possibleDigitsList, digitsCount);
+    return Convert.ToInt32(String.Join("", nextNumArray));
+}
+
+int findNumber (List<int> possibleNumbersList, int digit)
+{
+    char charOfDigit = char.Parse(digit.ToString());
+    for (int i = 0; i < possibleNumbersList.Count(); i++)
+    {
+        string possibleNum = possibleNumbersList[i].ToString();
+        if (possibleNum[index] == charOfDigit)
+        {
+            return possibleNumbersList[i];
+        }
+
+    }
+    return 0;
+}
+
+int[] arrayBuilder (List<int> possibleDigitsList, int digitsCount)
+{
+    int[] temporaryArray = new int[4];
+    for (int i = 0; i < digitsCount; i++)
+    {
+        temporaryArray[i] = possibleDigitsList[i];
+    }
+    for (int i = digitsCount; i < 4; i++)
+    {
+        temporaryArray[i] = temporaryArray[0];
+    }
+    return temporaryArray;
 }
 
 static int findIndexOfDifferentDigit(List<int> possibleNumbersList)
 {
     string num1 = possibleNumbersList[0].ToString();
     string num2 = possibleNumbersList[1].ToString();
+    if(num1.Length != 4)
+    {
+        num1 = "0" + num1;
+    }
+    if (num2.Length != 4)
+    {
+        num2 = "0" + num2;
+    }
+
     int index = -1;
     for (int i = 0;i < 4; i++)
     {
