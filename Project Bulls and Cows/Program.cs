@@ -1,7 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-
-//should make something to check if all the numbers of the player are the same. 
-
+﻿
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -83,11 +80,7 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
     else if (isFinalPhase == false && nextNum != 1122)
     {
         removeUnmatchingNumbers(ref possibleNumbersList, lastGuess, ref bulls, ref cows);
-
-        //I decided to pick a random number from the numbers left and see what results the algorhytm will have. For now I am going to postpone the "score checking" functionality in order first to complete
-        //the game entirely       
-        //In this edition I make a score checker to make the guessing faster and more-accurate and save turns     
-            nextNum = scoreChecker(possibleNumbersList, bulls, cows);
+        nextNum = scoreChecker(possibleNumbersList, bulls, cows);
 
     }
 
@@ -95,7 +88,6 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
 
     Console.WriteLine($"Your number is: {string.Join("", numToArray(playerNumber))}");
     Console.WriteLine($"PC guess is:    {string.Join("", numToArray(nextNum))}");
-    //The PC has asked about a number and now the player enters the answer
     Console.WriteLine("Please, enter bulls and cows:");
     Console.Write("Bulls:");
     bulls = bullsAndCowsValidation();
@@ -118,8 +110,8 @@ void pcTurn(ref List<int> possibleNumbersList, ref int lastGuess, ref int bulls,
 
 List<int> initialisePossibleDigitList (List<int> possibleNumbersList)
 {
+    //We take possibleNumbersList and extract the digts at the [index] position
     List<int> possibleDigitsList = new List<int>();
-    //now to find the index of the digit that is different in every number in possibleNumbersList
     index = findIndexOfDifferentDigit(possibleNumbersList);
 
     //Extracting all possible digits in separate list
@@ -127,8 +119,6 @@ List<int> initialisePossibleDigitList (List<int> possibleNumbersList)
     {
         int[] temp = numToArray(possibleNumbersList[i]);
         int digit = temp[index];
-        //char temp = possibleNumbersList[i].ToString()[index];
-        //int digit = Convert.ToInt32(temp);
         if (!possibleDigitsList.Contains(digit))
         {
             possibleDigitsList.Add(digit);
@@ -144,11 +134,10 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
     {
         firstTimeInThisMethod = false;
     }
-    //This part is for when we have already used the algorhytm and now we have result
+    
     else if (possibleNumbersList.Count == 1) 
         return possibleNumbersList[0];
 
-    //else if (bulls == 1)
     else if (bulls > expectedBulls)
     {
         //this means that the missing digit came on the right place
@@ -165,14 +154,13 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
         }
     }
 
-    //else if (cows == 1)
     else if (cows > expectedCows)
-    {   //we found the last digit among the last asked num so I need to make a new possibleDigitsList only with the current digits
+    {   //we found the last digit among the lastGuess num so I need to clear the rest possibleDigitsList and make a new possibleDigitsList only with the current digits
         possibleDigitsList.Clear();
         int[] nextNumToArray = numToArray(lastGuess);
         //The below code is for these cases: . . 7 .
         //And the number that the PC build:  8 7 8 7
-        //Then the pc will remove the second 8 byt not the first one and thus making one more guess (or an infinite guess loop) instead of removing the digit 8 as a whole and building the guess that is winning
+        //Then the pc will remove the second 8 bуt not the first one and thus making one more guess (or an infinite guess loop) instead of removing the digit 8 as a whole and building the guess that is winning
         int digitOnTheIndex = nextNumToArray[index];
         for (int i = 0; i < 4; i++)
         {
@@ -183,7 +171,7 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
             }
             else
             {
-                //with the below 'if' I want to sort out every repeated number so that in the possibleDigitsList digits are present only once.
+                //with the below 'if' I want to sort out every repeated number in the last guess so that in the possibleDigitsList digits the digit is present only once.
                 if (possibleDigitsList.Contains(nextNumToArray[i]))
                 {
                     continue;
@@ -193,9 +181,10 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
         }
     }
 
-    //else if (bulls == 0 && cows == 0)
     else if (bulls <= expectedBulls && cows <= expectedCows)
     {
+        //Means that the number that is made to find out the last digit did not get any special result, meaning result with one more cow or one more bull than expected. 
+        //This would be simpler if the answer was just bulls == 0 and cows == 0, but while debugging I found a logic hole so... the right way is the current way.
         int[] nextNumToArray = new int[4];
         for (int i = 3; i >= 0; i--)
         {
@@ -212,7 +201,7 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
         }
     }
     
-    //This is the part when the algorhytm decides how to build the next number
+    //This is the logic part when the algorhytm decides how to build the next number
     int digitsCount = 0;
 
     if(possibleDigitsList.Count > 4)
@@ -243,12 +232,10 @@ int threeBullsOptimisedAlgorhytm(List<int> possibleNumbersList, List<int> possib
 
     int[] nextNumArray = arrayBuilder(possibleDigitsList, digitsCount);
     //now to check wheter we expect more bulls in the answer
-    //int[] lastGuessToArray = numToArray(lastGuess);
     int[] threeBullsNumberToArray = numToArray(threeBullsNumber);
     bullsAndCowsChecker(nextNumArray, threeBullsNumberToArray, ref expectedBulls, ref expectedCows);
     return Convert.ToInt32(String.Join("", nextNumArray));
 }
-
 
 int findNumber (List<int> possibleNumbersList, int digit)
 {
@@ -279,19 +266,25 @@ int[] arrayBuilder (List<int> possibleDigitsList, int digitsCount)
     return temporaryArray;
 }
 
-static int findIndexOfDifferentDigit(List<int> possibleNumbersList)
+string fillZeroDigitsIfNecessary (string num)
+{
+    if (num.Length < 4)
+    {
+        int numDifference = 4 - num.Length;
+        for (int i = 0; i < numDifference; i++)
+        {
+            num = "0" + num;
+        }
+    }
+    return num;
+}
+
+int findIndexOfDifferentDigit(List<int> possibleNumbersList)
 {
     string num1 = possibleNumbersList[0].ToString();
+    num1 = fillZeroDigitsIfNecessary(num1);
     string num2 = possibleNumbersList[1].ToString();
-    if(num1.Length != 4)
-    {
-        num1 = "0" + num1;
-    }
-    if (num2.Length != 4)
-    {
-        num2 = "0" + num2;
-    }
-
+    num2 = fillZeroDigitsIfNecessary(num2);    
     int index = -1;
     for (int i = 0;i < 4; i++)
     {
@@ -303,29 +296,19 @@ static int findIndexOfDifferentDigit(List<int> possibleNumbersList)
 
 static void removeUnmatchingNumbers(ref List<int> possibleNumbersList, int lastGuess, ref int bulls, ref int cows)
 {
-    //Here I will analyse what would be the result if the correct pass was the input pass. Checking bulls and cows quantity to decide whether the number is a valid option or not.
-    //Converting the input number to array which will save the value and making a duplicate to work with the value freely
-
-    //For the next time: to check relation between: previousNumArray, lastNumberArray, tempArray and which one to send in bullsAndCowsChecker
-
-    //1.Converting the last num that the PC asked into array.
-    //2.I need lastNumberArray to be declared this way because in the loop I want to work with a copy of it (a.k.a "tempArray") in order to make comparisons multiple times
+    //The following code is a conclusion of some heavy ass mathematician logic. In short: if the next numbers of bulls and cows don't match the numbers from the last PC try, we don't need them so we remove them 
     int[] lastNumberArray = numToArray(lastGuess);
 
-    for (int k = 0; k < possibleNumbersList.Count; k++)
-    {
-        //possibleNumberArray makes and array from the number that is pushed and it makes sure that the array is going to contain 4 digits (in case possibleNumbersList[k] < 1000 && possibleNumbersList[k] >=0)
-        int[] possibleNumberArray = numToArray(possibleNumbersList[k]);
-        //defining and redefining tempArray again in order to make next comparison with each loop iteration. There were problems with passing of lastNumberArray by reference not by value
-        //int[] tempArray = copyArray(lastNumberArray);
+    for (int i = 0; i < possibleNumbersList.Count; i++)
+    {      
+        int[] possibleNumberArray = numToArray(possibleNumbersList[i]);
         int _bulls = 0;
         int _cows = 0;
         bullsAndCowsChecker(lastNumberArray, possibleNumberArray, ref _bulls, ref _cows);
 
-        //The following code is a conclusion of some heavy ass mathematician logic. In short: if the next numbers of bulls and cows don't match the numbers from the first PC try, we don't need them so we remove them
         if (_bulls != bulls || _cows != cows)
         {
-            possibleNumbersList[k] = -1;
+            possibleNumbersList[i] = -1;
         }
     }
     possibleNumbersList.RemoveAll(item => item == -1);
@@ -336,9 +319,8 @@ static int scoreChecker(List<int> possibleNumbersList, int bulls, int cows)
     //How does it work:
     //1.Picking a number from possibleNumbersList.
     //2.Calling bullsAndCowsChecker() to get bulls & cows result.
-    //3.saving the result in a very specific format (<num>bull(s)" "<num>cow(s)) in a separate list, created cpecially for the scores
-    //4.creating a maxScore and minimaxScore integers. maxScore is going to hold the quantity of most frequent response. Minimax = list.count - maxScore. Separate list for the minimaxScore
-    //5.getting the biggest int in minimaxScoreList and the corresponding number to it and preparing to ask it in the next turn.
+    //3.Applying the logic from the Donald Knuth's method. 
+    //4.Creating minimaxScoreList to keep the scores of the numbers and pick the one that is going to sort out the most of possibleNumbersList and thus getting closer to win
     int _bulls = 0;
     int _cows = 0;
     List<int> minimaxScoreList = new List<int>();
@@ -346,17 +328,13 @@ static int scoreChecker(List<int> possibleNumbersList, int bulls, int cows)
     for (int i = 0; i < possibleNumbersList.Count; i++)
     {
         int currentMiniMaxScore = 0;
+        int[] currentNumArray = numToArray(possibleNumbersList[i]);
+
         for (int j = 0; j < possibleNumbersList.Count; j++)
         {
-            if (i == j)
-            {
-                continue;
-            }
-
-            int[] currentNumArray = numToArray(possibleNumbersList[i]);
             int[] everyOtherNumArray = numToArray(possibleNumbersList[j]);
             bullsAndCowsChecker(currentNumArray, everyOtherNumArray, ref _bulls, ref _cows);
-            //Here I have the bulls & cows result from comparison of two numbers. Now I have to save it in a list
+                    
             if (_bulls != bulls || _cows != cows)
             {
                 currentMiniMaxScore++;
@@ -385,7 +363,6 @@ void playerTurn(int pcNum)
     {
         Console.WriteLine("Congratulations! You guessed the number!");
         areWePlaying = false;
-
     }
     else
     {
@@ -399,6 +376,7 @@ static int[] numToArray(int num)
     if (num < 1000)
     {
         int numDifference = 4 - num.ToString().Length;
+        //The code from below is obviously copied from StackOverflow. It's VERY useful though.
         int[] oldNumArray = Array.ConvertAll(num.ToString().ToArray(), x => (int)x - 48);
         for (int i = 0; i < numDifference; i++)
         {
@@ -417,6 +395,7 @@ static int[] numToArray(int num)
 }
 static int[] copyArray(int[] inputNumToArray)
 {
+
     int[] temp = new int[4];
     for (int i = 0; i < inputNumToArray.Length; i++)
     {
@@ -426,13 +405,15 @@ static int[] copyArray(int[] inputNumToArray)
 }
 static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bulls, ref int _cows)
 {
+    //Comparing two arrays and counting bulls & cows.
     _bulls = 0;
     _cows = 0;
-    //Comparing two arrays and counting bulls & cows.
 
-    //creating a copy of the two arrays so that there is no value interfearance in refference
+    //creating a copy of the two arrays so that there is work with value, not with refference.
     int[] firstArrayCopy = copyArray(firstArray);
     int[] secondArrayCopy = copyArray(secondArray);
+    
+    //Checking for bulls first
     for (int i = 0; i < 4 ; i++)
     {
         if (firstArrayCopy[i] == secondArrayCopy[i])
@@ -442,7 +423,8 @@ static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bu
             secondArrayCopy[i] = -1;
         }
     }
-
+    
+    //Now it's safe to check for cows
     for (int i = 0; i < 4; i++)
     {      
         for (int j = 0; j < 4; j++)
@@ -459,12 +441,14 @@ static void bullsAndCowsChecker(int[] firstArray, int[] secondArray, ref int _bu
 }
 static int generatePcNum()
 {
+    //The piece of code which the PC uses to generate it's secret number
     Random random = new Random();
     int randomNumber = random.Next(0, 10000);
     return randomNumber;
 }
 static int bullsAndCowsValidation()
 {
+    //This code is validating the input of bulls and cows
     while (true)
     {
         int input;
@@ -489,6 +473,7 @@ static int bullsAndCowsValidation()
 }
 static int numberForGuessingValidation()
 {    
+    //This code prevents the player of entering invalid input which could cause crashes
     while (true)
     {
         int input;
@@ -514,6 +499,7 @@ static int numberForGuessingValidation()
 }
 static bool firstTurnGenerator()
 {
+    //Simple code to decide wich side starts first
     Random random = new Random();
     int number = random.Next(2);
     if (number == 0)
@@ -528,6 +514,7 @@ static bool firstTurnGenerator()
 
 static void initialiseAllPossibleNumbers(ref List<int> possibleNumbersList)
 {
+    //The name speaks for itself
     for (int i = 0; i < 10000; i++)
     {
         possibleNumbersList.Add(i);
