@@ -21,7 +21,7 @@ int threeBullsNumber = 0;
 int playerNumber = 0;
 
 Console.WriteLine("Welcome to 'Bulls and Cows'!");
-Console.WriteLine($"Random 4-digit number of the PC: {string.Join("", numToArray(pcNum))}");
+//Console.WriteLine($"Random 4-digit number of the PC: {string.Join("", numToArray(pcNum))}");
 Console.Write("You can write your number here:  ");
 playerNumber = int.Parse(Console.ReadLine());
 
